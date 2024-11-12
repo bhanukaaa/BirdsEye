@@ -77,7 +77,7 @@ RESTART_LABEL:
         if (lives > 4) DrawTexture(TEX_base_full, 0, 0, {255, 255, 255, 200});
         else if (lives > 2) DrawTexture(TEX_base_dmg, 0, 0, {255, 255, 255, 200});
         else DrawTexture(TEX_base_crit, 0, 0, {255, 255, 255, 200});
-        DrawTexture(TEX_stars_bg, DANGER_ZONE, 0, WHITE);
+        DrawTexture(TEX_stars_bg, DANGER_ZONE, 0, {255, 209, 209, 200});
 
         // GUI ig?
         DrawText(TextFormat("Wave: %d", wave), (SCREEN_WIDTH - 154) / 2, 10, 40, {255, 255, 255, 120});
@@ -270,6 +270,7 @@ RESTART_LABEL:
     UnloadTexture(TEX_base_crit);
     UnloadTexture(TEX_base_dmg);
     UnloadTexture(TEX_base_full);
+    UnloadTexture(TEX_stars_bg);
     CloseAudioDevice();
     CloseWindow();
     return 0;
