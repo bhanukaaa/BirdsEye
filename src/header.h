@@ -16,14 +16,16 @@
 #define RADIUS 20
 #define MAX_ACCELERATION 0.4f
 #define MAX_VELOCITY 5
-#define TURRET_LENGTH 40
+#define TURRET_LENGTH 20
+#define SHIP_SCALE 0.55f
 
 // entity
 #define WALL_BOUNCE -0.1
 
 // bullet
-#define BULLET_VELOCITY 0.4
+#define BULLET_VELOCITY 0.8
 #define BULLET_RADIUS 3
+#define BULLET_SCALE 0.6f
 
 // enemy
 #define MAX_VELOCITY_ENEMY 3
@@ -51,6 +53,7 @@ void playNoAmmo();
 void playForbidden();
 void playNegative();
 void playPowerup();
+void playDamage();
 
 void infoScreen();
 void introScreen();
@@ -78,14 +81,17 @@ class Entity {
 class Player : public Entity {
     private:
         Vector2 turretTip;
+        Vector2 origin;
+        Rectangle source;
     public:
-        Player();
+        Player(Texture *);
 
         short ammo;
         float direct;
         short cooldown;
         short maxVelocity;
         std::vector<Bullet> bullets;
+        Texture* TEX_ship;
 
         void update();
         void render();
@@ -95,8 +101,9 @@ class Player : public Entity {
         void move(short, short);
 };
 
-class Bullet { // not child class of entity as acceleration and logic not the same
-    private:   // might change later
+class Bullet {
+    private:
+        float angle;
     public:
         Bullet(Vector2, Vector2);
 

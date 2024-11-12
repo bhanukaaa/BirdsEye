@@ -14,6 +14,7 @@ Enemy::Enemy() {
 
 void Enemy::render() {
     DrawCircle(pos.x, pos.y, RADIUS, ORANGE);
+    DrawCircleLines(pos.x, pos.y, RADIUS, RED);
 }
 
 void Enemy::update() {

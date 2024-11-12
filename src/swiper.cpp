@@ -6,6 +6,7 @@ Swiper::Swiper() {
 
 void Swiper::render() {
     DrawCircle(pos.x, pos.y, RADIUS, MAROON);
+    DrawCircleLines(pos.x, pos.y, RADIUS, YELLOW);
 }
 
 bool Swiper::checkPlayer(Vector2 playerPos) {

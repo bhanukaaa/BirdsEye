@@ -7,6 +7,11 @@ Sound AUDIO_noAmmo;
 Sound AUDIO_forbidden;
 Sound AUDIO_negative;
 Sound AUDIO_powerup;
+Sound AUDIO_damage;
+
+Texture2D TEX_bullet;
+Rectangle RENDER_bullet_source;
+Vector2 RENDER_bullet_origin;
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
@@ -21,32 +26,63 @@ int main() {
     AUDIO_forbidden = LoadSound("ogg/forbidden.ogg");
     AUDIO_negative = LoadSound("ogg/negative.ogg");
     AUDIO_powerup = LoadSound("ogg/powerup.ogg");
+    AUDIO_damage = LoadSound("ogg/damage.ogg");
+
+    // load and scale textures
+    Image img = LoadImage("png/ship.png");
+    ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
+    Texture2D TEX_ship = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    img = LoadImage("png/bullet.png");
+    ImageResize(&img, img.width * BULLET_SCALE, img.height * BULLET_SCALE);
+    TEX_bullet = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    SetTextureFilter(TEX_ship, TEXTURE_FILTER_TRILINEAR);
+    SetTextureFilter(TEX_bullet, TEXTURE_FILTER_TRILINEAR);
+
+    // constant offset values; bullet rendering
+    RENDER_bullet_source = {0, 0, (float) TEX_bullet.width, (float) TEX_bullet.height};
+    RENDER_bullet_origin = {TEX_bullet.width * 0.5f, TEX_bullet.height * 0.5f};
+
+    Texture2D TEX_base_full = LoadTexture("png/base_100.png");
+    Texture2D TEX_base_dmg = LoadTexture("png/base_50.png");
+    Texture2D TEX_base_crit = LoadTexture("png/base_15.png");
+
+    Texture2D TEX_stars_bg = LoadTexture("png/stars.png");
 
     introScreen();
 
 RESTART_LABEL:
     infoScreen();
 
-    Player player;
+    Player player(&TEX_ship);
     std::vector<Enemy*> enemies;
     std::vector<PowerUp> powerups;
 
     float score = 0;
     short moveX, moveY;
     short transAlpha = 0;
-    short wave = 0, lives = 5;
+    short wave = 0, lives = 7;
     short mgTime = -1, infTime = -1, speedTime = -1;
+    bool waveTrans = true;
 
     // game
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(BLACK);
 
+        // background
+        if (lives > 4) DrawTexture(TEX_base_full, 0, 0, {255, 255, 255, 200});
+        else if (lives > 2) DrawTexture(TEX_base_dmg, 0, 0, {255, 255, 255, 200});
+        else DrawTexture(TEX_base_crit, 0, 0, {255, 255, 255, 200});
+        DrawTexture(TEX_stars_bg, DANGER_ZONE, 0, WHITE);
+
         // GUI ig?
-        DrawRectangle(0, 0, DANGER_ZONE, SCREEN_HEIGHT, {253, 158, 52, 40});
         DrawText(TextFormat("Wave: %d", wave), (SCREEN_WIDTH - 154) / 2, 10, 40, {255, 255, 255, 120});
-        DrawText(TextFormat("Score: %.0f", score), 10, 10, 30, {255, 255, 255, 200});
-        DrawText(TextFormat("HP: %d", lives), 10, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 255});
+        DrawText(TextFormat("Score: %.0f", score), DANGER_ZONE + 20, 10, 30, {255, 255, 255, 200});
+        DrawText(TextFormat("HP: %d", lives), DANGER_ZONE + 20, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 255});
         DrawText(TextFormat("Ammo: %d", player.ammo), SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 150});
 
         // --------------------------------------------
@@ -54,15 +90,9 @@ RESTART_LABEL:
         if (player.cooldown) player.cooldown -= 1;
         score += 0.05;
 
-        if (transAlpha > 0) {
-            DrawText(TextFormat("Wave %d", wave), (SCREEN_WIDTH - MeasureText(TextFormat("Wave %d", wave), 100)) / 2,
-                    (SCREEN_HEIGHT - 100) / 2, 100, {255, 255, 255, (unsigned char) transAlpha});
-            transAlpha -= 3;
-        }
-        
         if (enemies.size() == 0) {
             score += wave * 100;
-            wave++;
+            wave++; waveTrans = true;
             transAlpha = 255;
             // spawn enemies upon wave end
             for (int i = 0; i < 3 * powf(1.3f, wave) * powf(0.85f, wave); i++)
@@ -134,8 +164,9 @@ RESTART_LABEL:
 
             if (enemies[e]->pos.x < DANGER_ZONE) {
                 // reached target
-                playNegative();
+                playDamage();
                 lives -= 1;
+                transAlpha = 150; waveTrans = false;
                 enemies[e]->alive = false;
             }
 
@@ -205,6 +236,14 @@ RESTART_LABEL:
         player.update();
         player.render();
 
+        if (transAlpha > 0) {
+            DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, {0, 0, 0, (unsigned char) transAlpha});
+            if (waveTrans)
+                DrawText(TextFormat("Wave %d", wave), (SCREEN_WIDTH - MeasureText(TextFormat("Wave %d", wave), 100)) / 2,
+                    (SCREEN_HEIGHT - 100) / 2, 100, {255, 255, 255, (unsigned char) transAlpha});
+            transAlpha -= 5;
+        }
+
         // -------------------------------------------
         EndDrawing();
     }
@@ -226,6 +265,11 @@ RESTART_LABEL:
     UnloadSound(AUDIO_select);
     UnloadSound(AUDIO_single);
     UnloadSound(AUDIO_powerup);
+    UnloadTexture(TEX_ship);
+    UnloadTexture(TEX_bullet);
+    UnloadTexture(TEX_base_crit);
+    UnloadTexture(TEX_base_dmg);
+    UnloadTexture(TEX_base_full);
     CloseAudioDevice();
     CloseWindow();
     return 0;
@@ -243,6 +287,7 @@ void playNoAmmo() { PlaySound(AUDIO_noAmmo); }
 void playForbidden() { PlaySound(AUDIO_forbidden); }
 void playNegative() { PlaySound(AUDIO_negative); }
 void playPowerup() { PlaySound(AUDIO_powerup); }
+void playDamage() { PlaySound(AUDIO_damage); }
 
 void introScreen() {
     short alpha = 255;
@@ -252,7 +297,7 @@ void introScreen() {
 
         DrawText("Bird's Eye", (SCREEN_WIDTH - MeasureText("Bird's Eye", 160)) / 2, -50 + (SCREEN_HEIGHT - 160) / 2, 160, WHITE);
         DrawText("Space to Start", (SCREEN_WIDTH - MeasureText("Space to Start", 50)) / 2, 70 + (SCREEN_HEIGHT - 50) / 2, 50, GRAY);
-        DrawText("v1.4", 10, SCREEN_HEIGHT - 35, 25, GRAY);
+        DrawText("v1.5", 10, SCREEN_HEIGHT - 35, 25, GRAY);
 
         if (alpha > 0) {
             DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, {0, 0, 0, (unsigned char) alpha});

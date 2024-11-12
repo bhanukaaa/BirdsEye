@@ -209,6 +209,7 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
         # resource file contains windows executable icon and properties
         # -Wl,--subsystem,windows hides the console window
         CFLAGS += $(RAYLIB_PATH)/src/raylib.rc.data
+        CFLAGS += -Wl,--subsystem,windows
     endif
     ifeq ($(PLATFORM_OS),LINUX)
         ifeq ($(RAYLIB_LIBTYPE),STATIC)

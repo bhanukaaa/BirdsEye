@@ -18,6 +18,7 @@ void Brute::render() {
         DrawCircle(pos.x, pos.y, BRUTE_RADIUS, DARKBLUE);
         break;
     }
+    DrawCircleLines(pos.x, pos.y, BRUTE_RADIUS, BLACK);
 }
 
 void Brute::update() {

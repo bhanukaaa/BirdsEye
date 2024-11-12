@@ -1,6 +1,6 @@
 #include "header.h"
 
-Player::Player() {
+Player::Player(Texture* texture) {
     // default values
     pos = {100, 400};
     direct = 90.0f * DEG2RAD;
@@ -8,6 +8,9 @@ Player::Player() {
     maxVelocity = MAX_VELOCITY;
     ammo = 20;
     cooldown = 0;
+    TEX_ship = texture;
+    origin = {TEX_ship->width * 0.5f, TEX_ship->height * 0.5f};
+    source = {0, 0, (float) TEX_ship->width, (float) TEX_ship->height};
 }
 
 void Player::move(short x, short y) {
@@ -28,21 +31,7 @@ void Player::render() {
     // update tip position w/ direction
     direct = atan2(GetMouseX() - pos.x, GetMouseY() - pos.y) - PI / 2;
     turretTip = {pos.x + cos(direct) * TURRET_LENGTH, pos.y - sin(direct) * TURRET_LENGTH};
-
-    // turret base calcs
-    Vector2 turretL = {
-        pos.x + cos(direct + PI / 2) * 18,
-        pos.y - sin(direct + PI / 2) * 18
-    }, turretR = {
-        pos.x + cos(direct - PI / 2) * 18,
-        pos.y - sin(direct - PI / 2) * 18
-    };
-
-    // not efficient -> looks cooler -> idc
-    DrawTriangle(turretTip, turretL, turretR, RED);
-    DrawTriangleLines(turretTip, turretL, turretR, WHITE);
-    DrawPoly(pos, 7, RADIUS, direct * RAD2DEG, RED);
-    DrawPolyLines(pos, 7, RADIUS, direct * RAD2DEG, WHITE);
+    DrawTexturePro(*TEX_ship, source, {pos.x, pos.y, (float) TEX_ship->width, (float) TEX_ship->height}, origin, -direct * RAD2DEG, WHITE);
 }
 
 void Player::shoot() {
