@@ -1,11 +1,4 @@
-// #include <raylib.h>
-// #include <raymath.h>
-
-#include "includes.h"
-#include "classes.h"
-#include "constants.h"
-
-Vector2 SetMagnitude(Vector2, float);
+#include "header.h"
 
 Brute::Brute() {
     hp = 4;

@@ -1,16 +1,10 @@
-// #include <raylib.h>
-// #include <raymath.h>
-
-#include "includes.h"
-#include "classes.h"
-#include "constants.h"
-
-Vector2 SetMagnitude(Vector2, float);
+#include "header.h"
 
 Enemy::Enemy() {
     // random start position and velocity
     pos = {SCREEN_WIDTH - 25, (float) GetRandomValue(RADIUS, SCREEN_HEIGHT - RADIUS)};
     velo = {(float) -GetRandomValue(1, 2), 0};
+
     type = 1;
 
     // accelerate towards danger zone

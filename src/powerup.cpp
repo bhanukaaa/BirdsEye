@@ -1,9 +1,4 @@
-// #include <raylib.h>
-// #include <raymath.h>
-
-#include "includes.h"
-#include "classes.h"
-#include "constants.h"
+#include "header.h"
 
 PowerUp::PowerUp(Vector2 playerPos) {
     angle = 0;

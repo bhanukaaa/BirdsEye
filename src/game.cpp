@@ -1,28 +1,63 @@
-// #include <raylib.h>
-// #include <raymath.h>
-// #include <iostream>
-// #include <vector>
-#include "includes.h"
+#include "header.h" // contains includes, macros and class definitions
 
-#include "constants.h"
-#include "classes.h"
-#include "game.h"
+Sound AUDIO_single;
+Sound AUDIO_burst;
+Sound AUDIO_select;
+Sound AUDIO_noAmmo;
+Sound AUDIO_forbidden;
+Sound AUDIO_negative;
+Sound AUDIO_powerup;
+Sound AUDIO_damage;
+
+Texture2D TEX_bullet;
+Rectangle RENDER_bullet_source;
+Vector2 RENDER_bullet_origin;
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
-    SetTargetFPS(60);
-
     InitAudioDevice();
     SetMasterVolume(0.25);
+    SetTargetFPS(60);
 
-    loadAudio();
-    loadTextures();
+    AUDIO_single = LoadSound("ogg/single.ogg");
+    AUDIO_burst = LoadSound("ogg/burst.ogg");
+    AUDIO_select = LoadSound("ogg/select.ogg");
+    AUDIO_noAmmo = LoadSound("ogg/noAmmo.ogg");
+    AUDIO_forbidden = LoadSound("ogg/forbidden.ogg");
+    AUDIO_negative = LoadSound("ogg/negative.ogg");
+    AUDIO_powerup = LoadSound("ogg/powerup.ogg");
+    AUDIO_damage = LoadSound("ogg/damage.ogg");
+
+    // load and scale textures
+    Image img = LoadImage("png/ship.png");
+    ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
+    Texture2D TEX_ship = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    img = LoadImage("png/bullet.png");
+    ImageResize(&img, img.width * BULLET_SCALE, img.height * BULLET_SCALE);
+    TEX_bullet = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    SetTextureFilter(TEX_ship, TEXTURE_FILTER_TRILINEAR);
+    SetTextureFilter(TEX_bullet, TEXTURE_FILTER_TRILINEAR);
+
+    // constant offset values; bullet rendering
+    RENDER_bullet_source = {0, 0, (float) TEX_bullet.width, (float) TEX_bullet.height};
+    RENDER_bullet_origin = {TEX_bullet.width * 0.5f, TEX_bullet.height * 0.5f};
+
+    Texture2D TEX_base_full = LoadTexture("png/base_100.png");
+    Texture2D TEX_base_dmg = LoadTexture("png/base_50.png");
+    Texture2D TEX_base_crit = LoadTexture("png/base_15.png");
+
+    Texture2D TEX_stars_bg = LoadTexture("png/stars.png");
+
     introScreen();
-    Color backgroundHue;
 
 RESTART_LABEL:
     infoScreen();
-    Player player;
+
+    Player player(&TEX_ship);
     std::vector<Enemy*> enemies;
     std::vector<PowerUp> powerups;
 
@@ -32,21 +67,34 @@ RESTART_LABEL:
     short wave = 0, lives = 7;
     short mgTime = -1, infTime = -1, speedTime = -1;
     bool waveTrans = true;
-    refreshHue(&backgroundHue);
 
     // game
     while (!WindowShouldClose()) {
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        // background
+        if (lives > 4) DrawTexture(TEX_base_full, 0, 0, {255, 255, 255, 200});
+        else if (lives > 2) DrawTexture(TEX_base_dmg, 0, 0, {255, 255, 255, 200});
+        else DrawTexture(TEX_base_crit, 0, 0, {255, 255, 255, 200});
+        DrawTexture(TEX_stars_bg, DANGER_ZONE, 0, {255, 209, 209, 200});
+
+        // GUI ig?
+        DrawText(TextFormat("Wave: %d", wave), (SCREEN_WIDTH - 154) / 2, 10, 40, {255, 255, 255, 120});
+        DrawText(TextFormat("Score: %.0f", score), DANGER_ZONE + 20, 10, 30, {255, 255, 255, 200});
+        DrawText(TextFormat("HP: %d", lives), DANGER_ZONE + 20, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 255});
+        DrawText(TextFormat("Ammo: %d", player.ammo), SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 150});
+
+        // --------------------------------------------
         if (lives <= 0) break; // game over
-        if (player.cooldown) player.cooldown -= 1; // firing cooldown
+        if (player.cooldown) player.cooldown -= 1;
         score += 0.05;
 
-        // wave end handling
         if (enemies.size() == 0) {
             score += wave * 100;
             wave++; waveTrans = true;
-            refreshHue(&backgroundHue);
             transAlpha = 255;
-            // spawn enemies
+            // spawn enemies upon wave end
             for (int i = 0; i < 3 * powf(1.3f, wave) * powf(0.85f, wave); i++)
                 spawnEnemy(&enemies);
 
@@ -54,22 +102,6 @@ RESTART_LABEL:
                 if (GetRandomValue(0, 1)) powerups.push_back(PowerUp(player.pos));
             }
         }
-
-        // --------------------------------------------
-        BeginDrawing();
-        ClearBackground(BLACK);
-
-        // background
-        if (lives > 4) DrawTexture(TEX_base_full, 0, 0, {255, 255, 255, 225});
-        else if (lives > 2) DrawTexture(TEX_base_dmg, 0, 0, {255, 255, 255, 225});
-        else DrawTexture(TEX_base_crit, 0, 0, {255, 255, 255, 225});
-        DrawTexture(TEX_stars_bg, DANGER_ZONE, 0, backgroundHue);
-
-        // GUI ig?
-        DrawText(TextFormat("Wave: %d", wave), (SCREEN_WIDTH - 154) / 2, 10, 40, {255, 255, 255, 120});
-        DrawText(TextFormat("Score: %.0f", score), DANGER_ZONE + 20, 10, 30, {255, 255, 255, 200});
-        DrawText(TextFormat("HP: %d", lives), DANGER_ZONE + 20, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 255});
-        DrawText(TextFormat("Ammo: %d", player.ammo), SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50, 40, {255, 255, 255, 150});
 
         if (speedTime != -1) {
             // speed boost powerup
@@ -80,7 +112,6 @@ RESTART_LABEL:
             }
         }
 
-        // bullets, enemies; multi-occurrence
         for (size_t b = 0; b < player.bullets.size(); b++) {
             // update and render/despawn
             player.bullets[b].update();
@@ -124,7 +155,6 @@ RESTART_LABEL:
             }
         }
 
-        // enemies; single-occurrence
         for (size_t e = 0; e < enemies.size();) {
             if (player.ammo > 0 && enemies[e]->type == 2 && infTime == -1 && enemies[e]->checkPlayer(player.pos)) {
                 // swiper pursuit
@@ -136,7 +166,7 @@ RESTART_LABEL:
                 // reached target
                 playDamage();
                 lives -= 1;
-                transAlpha = 200; waveTrans = false;
+                transAlpha = 150; waveTrans = false;
                 enemies[e]->alive = false;
             }
 
@@ -151,7 +181,6 @@ RESTART_LABEL:
             }
         }
 
-        // powerups
         for (size_t p = 0; p < powerups.size(); p++) {
             short dist = Vector2Distance(powerups[p].pos, player.pos);
 
@@ -176,6 +205,15 @@ RESTART_LABEL:
             } 
         }
 
+
+        moveX = moveY = 0;
+        // allows for keycombo movement
+        if (IsKeyDown(KEY_W)) moveY -= 1;
+        if (IsKeyDown(KEY_S)) moveY += 1;
+        if (IsKeyDown(KEY_A)) moveX -= 1;
+        if (IsKeyDown(KEY_D)) moveX += 1;
+        player.move(moveX, moveY);
+
         if (infTime != -1) {
             // inf ammo powerup
             DrawRectangle(SCREEN_WIDTH - 210, SCREEN_HEIGHT - 50, 210, 50, BLACK);
@@ -187,19 +225,11 @@ RESTART_LABEL:
             } else infTime = -1;
         }
 
-        // WASD controls
-        moveX = moveY = 0; // allows for keycombo movement
-        if (IsKeyDown(KEY_W)) moveY -= 1;
-        if (IsKeyDown(KEY_S)) moveY += 1;
-        if (IsKeyDown(KEY_A)) moveX -= 1;
-        if (IsKeyDown(KEY_D)) moveX += 1;
-        player.move(moveX, moveY);
-
         if (mgTime != -1) {
             // machine gun powerup
             if (mgTime > GetTime()) player.machinegun();
             else mgTime = -1;
-        } // mouse click controls
+        }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) player.shoot();
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) player.shotgun();
 
@@ -228,46 +258,47 @@ RESTART_LABEL:
 
     if (endScreen(score)) goto RESTART_LABEL;
 
-    unloadAudio();
-    unloadTextures();
-
+    UnloadSound(AUDIO_burst);
+    UnloadSound(AUDIO_forbidden);
+    UnloadSound(AUDIO_negative);
+    UnloadSound(AUDIO_noAmmo);
+    UnloadSound(AUDIO_select);
+    UnloadSound(AUDIO_single);
+    UnloadSound(AUDIO_powerup);
+    UnloadTexture(TEX_ship);
+    UnloadTexture(TEX_bullet);
+    UnloadTexture(TEX_base_crit);
+    UnloadTexture(TEX_base_dmg);
+    UnloadTexture(TEX_base_full);
+    UnloadTexture(TEX_stars_bg);
     CloseAudioDevice();
     CloseWindow();
     return 0;
 }
 
-Sound AUDIO_single;
-Sound AUDIO_burst;
-Sound AUDIO_select;
-Sound AUDIO_noAmmo;
-Sound AUDIO_forbidden;
-Sound AUDIO_negative;
-Sound AUDIO_powerup;
-Sound AUDIO_damage;
+// helper functions
+Vector2 SetMagnitude(Vector2 vec, float mag) {
+    return Vector2Scale(Vector2Normalize(vec), mag);
+}
 
-Texture2D TEX_ship;
-Texture2D TEX_bullet;
-Texture2D TEX_base_full;
-Texture2D TEX_base_dmg;
-Texture2D TEX_base_crit;
-Texture2D TEX_stars_bg;
-
-Vector2 RENDER_ship_origin;
-Vector2 RENDER_bullet_origin;
-Rectangle RENDER_ship_source;
-Rectangle RENDER_bullet_source;
+void playSingle() { PlaySound(AUDIO_single); }
+void playBurst() { PlaySound(AUDIO_burst); }
+void playSelect() { PlaySound(AUDIO_select); }
+void playNoAmmo() { PlaySound(AUDIO_noAmmo); }
+void playForbidden() { PlaySound(AUDIO_forbidden); }
+void playNegative() { PlaySound(AUDIO_negative); }
+void playPowerup() { PlaySound(AUDIO_powerup); }
+void playDamage() { PlaySound(AUDIO_damage); }
 
 void introScreen() {
     short alpha = 255;
-    short hue = 0;
     while (!WindowShouldClose()) {
-        hue = (hue + 1) % 360;
         BeginDrawing();
         ClearBackground(BLACK);
 
-        DrawText("Bird's Eye", (SCREEN_WIDTH - MeasureText("Bird's Eye", 160)) / 2, -50 + (SCREEN_HEIGHT - 160) / 2, 160, ColorFromHSV(hue, 0.8, 1));
+        DrawText("Bird's Eye", (SCREEN_WIDTH - MeasureText("Bird's Eye", 160)) / 2, -50 + (SCREEN_HEIGHT - 160) / 2, 160, WHITE);
         DrawText("Space to Start", (SCREEN_WIDTH - MeasureText("Space to Start", 50)) / 2, 70 + (SCREEN_HEIGHT - 50) / 2, 50, GRAY);
-        DrawText("v1.6", 10, SCREEN_HEIGHT - 45, 35, ColorFromHSV(hue + 69, 0.5, 1));
+        DrawText("v1.5", 10, SCREEN_HEIGHT - 35, 25, GRAY);
 
         if (alpha > 0) {
             DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, {0, 0, 0, (unsigned char) alpha});
@@ -377,75 +408,4 @@ void spawnEnemy(std::vector<Enemy*> *enemies) {
         enemies->push_back(new Sprinter());
     else
         enemies->push_back(new Enemy());
-}
-
-void refreshHue(Color *color) {
-    *color = {(unsigned char) GetRandomValue(100, 255), (unsigned char) GetRandomValue(100, 255), (unsigned char) GetRandomValue(100, 255), 255};
-}
-
-Vector2 SetMagnitude(Vector2 vec, float mag) {
-    return Vector2Scale(Vector2Normalize(vec), mag);
-}
-
-void loadAudio() {
-    AUDIO_single = LoadSound("ogg/single.ogg");
-    AUDIO_burst = LoadSound("ogg/burst.ogg");
-    AUDIO_select = LoadSound("ogg/select.ogg");
-    AUDIO_noAmmo = LoadSound("ogg/noAmmo.ogg");
-    AUDIO_forbidden = LoadSound("ogg/forbidden.ogg");
-    AUDIO_negative = LoadSound("ogg/negative.ogg");
-    AUDIO_powerup = LoadSound("ogg/powerup.ogg");
-    AUDIO_damage = LoadSound("ogg/damage.ogg");
-}
-
-void unloadAudio() {
-    UnloadSound(AUDIO_burst);
-    UnloadSound(AUDIO_forbidden);
-    UnloadSound(AUDIO_negative);
-    UnloadSound(AUDIO_noAmmo);
-    UnloadSound(AUDIO_select);
-    UnloadSound(AUDIO_single);
-    UnloadSound(AUDIO_powerup);
-}
-
-void playSingle() { PlaySound(AUDIO_single); }
-void playBurst() { PlaySound(AUDIO_burst); }
-void playSelect() { PlaySound(AUDIO_select); }
-void playNoAmmo() { PlaySound(AUDIO_noAmmo); }
-void playForbidden() { PlaySound(AUDIO_forbidden); }
-void playNegative() { PlaySound(AUDIO_negative); }
-void playPowerup() { PlaySound(AUDIO_powerup); }
-void playDamage() { PlaySound(AUDIO_damage); }
-
-void loadTextures() {
-    Image img = LoadImage("png/ship.png");
-    ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
-    TEX_ship = LoadTextureFromImage(img);
-    UnloadImage(img);
-
-    img = LoadImage("png/bullet.png");
-    ImageResize(&img, img.width * BULLET_SCALE, img.height * BULLET_SCALE);
-    TEX_bullet = LoadTextureFromImage(img);
-    UnloadImage(img);
-
-    // constant offset values; bullet rendering
-    RENDER_bullet_source = {0, 0, (float) TEX_bullet.width, (float) TEX_bullet.height};
-    RENDER_bullet_origin = {TEX_bullet.width * 0.5f, TEX_bullet.height * 0.5f};
-    RENDER_ship_origin = {TEX_ship.width * 0.5f, TEX_ship.height * 0.5f};
-    RENDER_ship_source = {0, 0, (float) TEX_ship.width, (float) TEX_ship.height};
-
-    TEX_base_full = LoadTexture("png/base_100.png");
-    TEX_base_dmg = LoadTexture("png/base_50.png");
-    TEX_base_crit = LoadTexture("png/base_15.png");
-
-    TEX_stars_bg = LoadTexture("png/stars.png");
-}
-
-void unloadTextures() {
-    UnloadTexture(TEX_ship);
-    UnloadTexture(TEX_bullet);
-    UnloadTexture(TEX_base_crit);
-    UnloadTexture(TEX_base_dmg);
-    UnloadTexture(TEX_base_full);
-    UnloadTexture(TEX_stars_bg);
 }

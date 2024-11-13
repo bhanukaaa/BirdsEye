@@ -1,9 +1,4 @@
-// #include <raylib.h>
-// #include <raymath.h>
-
-#include "includes.h"
-#include "classes.h"
-#include "constants.h"
+#include "header.h"
 
 Entity::Entity() {
     // default values
