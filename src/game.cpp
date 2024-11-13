@@ -6,6 +6,11 @@
 #include "classes.h"
 #include "game.h"
 
+Texture2D TEX_base_full;
+Texture2D TEX_base_dmg;
+Texture2D TEX_base_crit;
+Texture2D TEX_stars_bg;
+
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
     SetTargetFPS(60);
@@ -52,22 +57,6 @@ RESTART_LABEL:
                 if (GetRandomValue(0, 1)) powerups.push_back(PowerUp(player.pos));
             }
         }
-
-        // WASD controls
-        moveX = moveY = 0; // allows for keycombo movement
-        if (IsKeyDown(KEY_W)) moveY -= 1;
-        if (IsKeyDown(KEY_S)) moveY += 1;
-        if (IsKeyDown(KEY_A)) moveX -= 1;
-        if (IsKeyDown(KEY_D)) moveX += 1;
-        player.move(moveX, moveY);
-
-        if (mgTime != -1) {
-            // machine gun powerup
-            if (mgTime > GetTime()) player.machinegun();
-            else mgTime = -1;
-        } // mouse click controls
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) player.shoot();
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) player.shotgun();
 
         // --------------------------------------------
         BeginDrawing();
@@ -201,6 +190,22 @@ RESTART_LABEL:
             } else infTime = -1;
         }
 
+        // WASD controls
+        moveX = moveY = 0; // allows for keycombo movement
+        if (IsKeyDown(KEY_W)) moveY -= 1;
+        if (IsKeyDown(KEY_S)) moveY += 1;
+        if (IsKeyDown(KEY_A)) moveX -= 1;
+        if (IsKeyDown(KEY_D)) moveX += 1;
+        player.move(moveX, moveY);
+
+        if (mgTime != -1) {
+            // machine gun powerup
+            if (mgTime > GetTime()) player.machinegun();
+            else mgTime = -1;
+        } // mouse click controls
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) player.shoot();
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) player.shotgun();
+
         player.update();
         player.render();
 
@@ -233,6 +238,23 @@ RESTART_LABEL:
     CloseWindow();
     return 0;
 }
+
+Sound AUDIO_single;
+Sound AUDIO_burst;
+Sound AUDIO_select;
+Sound AUDIO_noAmmo;
+Sound AUDIO_forbidden;
+Sound AUDIO_negative;
+Sound AUDIO_powerup;
+Sound AUDIO_damage;
+
+Texture2D TEX_ship;
+Texture2D TEX_bullet;
+
+Vector2 RENDER_ship_origin;
+Vector2 RENDER_bullet_origin;
+Rectangle RENDER_ship_source;
+Rectangle RENDER_bullet_source;
 
 void introScreen() {
     short alpha = 255;
@@ -343,3 +365,98 @@ bool endScreen(float score) {
     return false;
 }
 
+void spawnEnemy(std::vector<Enemy*> *enemies) {
+    short enemyRandomizer = GetRandomValue(0, 7);
+
+    if (enemyRandomizer == 0)
+        enemies->push_back(new Swiper());
+    else if (enemyRandomizer == 1)
+        enemies->push_back(new Brute());
+    else if (enemyRandomizer == 2)
+        enemies->push_back(new Sprinter());
+    else
+        enemies->push_back(new Enemy());
+}
+
+void refreshHue(Color *color) {
+    *color = {(unsigned char) GetRandomValue(100, 255), (unsigned char) GetRandomValue(100, 255), (unsigned char) GetRandomValue(100, 255), 255};
+}
+
+Vector2 SetMagnitude(Vector2 vec, float mag) {
+    return Vector2Scale(Vector2Normalize(vec), mag);
+}
+
+void loadAudio() {
+    AUDIO_single = LoadSound("ogg/single.ogg");
+    AUDIO_burst = LoadSound("ogg/burst.ogg");
+    AUDIO_select = LoadSound("ogg/select.ogg");
+    AUDIO_noAmmo = LoadSound("ogg/noAmmo.ogg");
+    AUDIO_forbidden = LoadSound("ogg/forbidden.ogg");
+    AUDIO_negative = LoadSound("ogg/negative.ogg");
+    AUDIO_powerup = LoadSound("ogg/powerup.ogg");
+    AUDIO_damage = LoadSound("ogg/damage.ogg");
+}
+
+void unloadAudio() {
+    UnloadSound(AUDIO_burst);
+    UnloadSound(AUDIO_forbidden);
+    UnloadSound(AUDIO_negative);
+    UnloadSound(AUDIO_noAmmo);
+    UnloadSound(AUDIO_select);
+    UnloadSound(AUDIO_single);
+    UnloadSound(AUDIO_powerup);
+}
+
+void playSingle() { PlaySound(AUDIO_single); }
+void playBurst() { PlaySound(AUDIO_burst); }
+void playSelect() { PlaySound(AUDIO_select); }
+void playNoAmmo() { PlaySound(AUDIO_noAmmo); }
+void playForbidden() { PlaySound(AUDIO_forbidden); }
+void playNegative() { PlaySound(AUDIO_negative); }
+void playPowerup() { PlaySound(AUDIO_powerup); }
+void playDamage() { PlaySound(AUDIO_damage); }
+
+void loadTextures() {
+    Image img;
+    switch (GetRandomValue(1, 3)) {
+        // random ship texture
+        case 1:
+            img = LoadImage("png/ship1.png");
+            break;
+        case 2:
+            img = LoadImage("png/ship2.png");
+            break;
+        case 3:
+            img = LoadImage("png/ship3.png");
+            break;
+    }
+    ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
+    TEX_ship = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    img = LoadImage("png/bullet.png");
+    ImageResize(&img, img.width * BULLET_SCALE, img.height * BULLET_SCALE);
+    TEX_bullet = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    // constant offset values; bullet rendering
+    RENDER_bullet_source = {0, 0, (float) TEX_bullet.width, (float) TEX_bullet.height};
+    RENDER_bullet_origin = {TEX_bullet.width * 0.5f, TEX_bullet.height * 0.5f};
+    RENDER_ship_origin = {TEX_ship.width * 0.5f, TEX_ship.height * 0.5f};
+    RENDER_ship_source = {0, 0, (float) TEX_ship.width, (float) TEX_ship.height};
+
+    TEX_base_full = LoadTexture("png/base_100.png");
+    TEX_base_dmg = LoadTexture("png/base_50.png");
+    TEX_base_crit = LoadTexture("png/base_15.png");
+
+    TEX_stars_bg = LoadTexture("png/stars.png");
+}
+
+void unloadTextures() {
+    UnloadTexture(TEX_ship);
+    UnloadTexture(TEX_bullet);
+    UnloadTexture(TEX_base_crit);
+    UnloadTexture(TEX_base_dmg);
+    UnloadTexture(TEX_base_full);
+    UnloadTexture(TEX_stars_bg);
+}
