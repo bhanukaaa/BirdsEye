@@ -1,6 +1,7 @@
-#include <raylib.h>
-#include <raymath.h>
+// #include <raylib.h>
+// #include <raymath.h>
 
+#include "includes.h"
 #include "constants.h"
 #include "classes.h"
 

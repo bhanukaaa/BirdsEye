@@ -1,12 +1,12 @@
-#include <raylib.h>
-#include <raymath.h>
-#include <iostream>
-#include <vector>
+// #include <raylib.h>
+// #include <raymath.h>
+// #include <iostream>
+// #include <vector>
+#include "includes.h"
 
 #include "constants.h"
 #include "classes.h"
 #include "game.h"
-
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
