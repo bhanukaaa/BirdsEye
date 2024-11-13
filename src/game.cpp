@@ -417,19 +417,7 @@ void playPowerup() { PlaySound(AUDIO_powerup); }
 void playDamage() { PlaySound(AUDIO_damage); }
 
 void loadTextures() {
-    Image img;
-    switch (GetRandomValue(1, 3)) {
-        // random ship texture
-        case 1:
-            img = LoadImage("png/ship1.png");
-            break;
-        case 2:
-            img = LoadImage("png/ship2.png");
-            break;
-        case 3:
-            img = LoadImage("png/ship3.png");
-            break;
-    }
+    Image img = LoadImage("png/ship.png");
     ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
     TEX_ship = LoadTextureFromImage(img);
     UnloadImage(img);
