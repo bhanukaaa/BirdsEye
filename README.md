@@ -1,3 +1,2 @@
-run game.exe in releases
-
-dont hate the name
+run game.exe after extracting latest release.
+windows defender probably will try to "protect" you, ignore that.
