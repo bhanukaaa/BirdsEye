@@ -1,4 +1,10 @@
-#include "header.h" // contains includes, macros and class definitions
+#include <raylib.h>
+#include <raymath.h>
+#include <vector>
+
+#include "constants.h"
+#include "classes.h"
+#include "game.h"
 
 Sound AUDIO_single;
 Sound AUDIO_burst;
@@ -12,6 +18,9 @@ Sound AUDIO_damage;
 Texture2D TEX_bullet;
 Rectangle RENDER_bullet_source;
 Vector2 RENDER_bullet_origin;
+Texture2D TEX_ship;
+Rectangle RENDER_ship_source;
+Vector2 RENDER_ship_origin;
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
@@ -31,7 +40,7 @@ int main() {
     // load and scale textures
     Image img = LoadImage("png/ship.png");
     ImageResize(&img, img.width * SHIP_SCALE, img.height * SHIP_SCALE);
-    Texture2D TEX_ship = LoadTextureFromImage(img);
+    TEX_ship = LoadTextureFromImage(img);
     UnloadImage(img);
 
     img = LoadImage("png/bullet.png");
@@ -39,17 +48,15 @@ int main() {
     TEX_bullet = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    SetTextureFilter(TEX_ship, TEXTURE_FILTER_TRILINEAR);
-    SetTextureFilter(TEX_bullet, TEXTURE_FILTER_TRILINEAR);
-
-    // constant offset values; bullet rendering
+    // constant offset values for rendering
+    RENDER_ship_source = {0, 0, (float) TEX_ship.width, (float) TEX_ship.height};
+    RENDER_ship_origin = {TEX_ship.width * 0.5f, TEX_ship.height * 0.5f};
     RENDER_bullet_source = {0, 0, (float) TEX_bullet.width, (float) TEX_bullet.height};
     RENDER_bullet_origin = {TEX_bullet.width * 0.5f, TEX_bullet.height * 0.5f};
 
     Texture2D TEX_base_full = LoadTexture("png/base_100.png");
     Texture2D TEX_base_dmg = LoadTexture("png/base_50.png");
     Texture2D TEX_base_crit = LoadTexture("png/base_15.png");
-
     Texture2D TEX_stars_bg = LoadTexture("png/stars.png");
 
     introScreen();
@@ -57,7 +64,7 @@ int main() {
 RESTART_LABEL:
     infoScreen();
 
-    Player player(&TEX_ship);
+    Player player;
     std::vector<Enemy*> enemies;
     std::vector<PowerUp> powerups;
 
@@ -292,13 +299,15 @@ void playDamage() { PlaySound(AUDIO_damage); }
 
 void introScreen() {
     short alpha = 255;
+    short hue = 0;
     while (!WindowShouldClose()) {
+        hue = (hue + 1) % 360;
         BeginDrawing();
         ClearBackground(BLACK);
 
-        DrawText("Bird's Eye", (SCREEN_WIDTH - MeasureText("Bird's Eye", 160)) / 2, -50 + (SCREEN_HEIGHT - 160) / 2, 160, WHITE);
+        DrawText("Bird's Eye", (SCREEN_WIDTH - MeasureText("Bird's Eye", 160)) / 2, -50 + (SCREEN_HEIGHT - 160) / 2, 160, ColorFromHSV(hue, 0.8, 1));
         DrawText("Space to Start", (SCREEN_WIDTH - MeasureText("Space to Start", 50)) / 2, 70 + (SCREEN_HEIGHT - 50) / 2, 50, GRAY);
-        DrawText("v1.5", 10, SCREEN_HEIGHT - 35, 25, GRAY);
+        DrawText("v1.5.6", 10, SCREEN_HEIGHT - 45, 35, ColorFromHSV(hue + 69, 0.5, 1));
 
         if (alpha > 0) {
             DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, {0, 0, 0, (unsigned char) alpha});
