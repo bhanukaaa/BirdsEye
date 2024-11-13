@@ -1,4 +1,8 @@
-#include "header.h"
+#include <raylib.h>
+#include <raymath.h>
+
+#include "classes.h"
+#include "constants.h"
 
 extern Texture2D TEX_bullet;
 extern Rectangle RENDER_bullet_source;

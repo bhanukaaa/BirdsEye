@@ -1,6 +1,21 @@
-#include "header.h"
+#include <raylib.h>
+#include <raymath.h>
 
-Player::Player(Texture* texture) {
+#include "constants.h"
+#include "classes.h"
+
+extern Texture2D TEX_ship;
+extern Vector2 RENDER_ship_origin;
+extern Rectangle RENDER_ship_source;
+
+void playSingle();
+void playBurst();
+void playNoAmmo();
+void playForbidden();
+
+Vector2 SetMagnitude(Vector2, float);
+
+Player::Player() {
     // default values
     pos = {100, 400};
     direct = 90.0f * DEG2RAD;
@@ -8,9 +23,6 @@ Player::Player(Texture* texture) {
     maxVelocity = MAX_VELOCITY;
     ammo = 20;
     cooldown = 0;
-    TEX_ship = texture;
-    origin = {TEX_ship->width * 0.5f, TEX_ship->height * 0.5f};
-    source = {0, 0, (float) TEX_ship->width, (float) TEX_ship->height};
 }
 
 void Player::move(short x, short y) {
@@ -31,7 +43,7 @@ void Player::render() {
     // update tip position w/ direction
     direct = atan2(GetMouseX() - pos.x, GetMouseY() - pos.y) - PI / 2;
     turretTip = {pos.x + cos(direct) * TURRET_LENGTH, pos.y - sin(direct) * TURRET_LENGTH};
-    DrawTexturePro(*TEX_ship, source, {pos.x, pos.y, (float) TEX_ship->width, (float) TEX_ship->height}, origin, -direct * RAD2DEG, WHITE);
+    DrawTexturePro(TEX_ship, RENDER_ship_source, {pos.x, pos.y, (float) TEX_ship.width, (float) TEX_ship.height}, RENDER_ship_origin, -direct * RAD2DEG, WHITE);
 }
 
 void Player::shoot() {

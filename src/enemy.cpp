@@ -1,4 +1,10 @@
-#include "header.h"
+#include <raylib.h>
+#include <raymath.h>
+
+#include "classes.h"
+#include "constants.h"
+
+Vector2 SetMagnitude(Vector2, float);
 
 Enemy::Enemy() {
     // random start position and velocity

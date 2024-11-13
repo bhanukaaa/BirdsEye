@@ -1,4 +1,10 @@
-#include "header.h"
+#include <raylib.h>
+#include <raymath.h>
+
+#include "classes.h"
+#include "constants.h"
+
+Vector2 SetMagnitude(Vector2, float);
 
 Swiper::Swiper() {
     type = 2;
@@ -17,7 +23,6 @@ bool Swiper::checkPlayer(Vector2 playerPos) {
         pursue(playerPos); // chase player
     return false;
 }
-
 
 void Swiper::pursue(Vector2 playerPos) {
     // desired velocity is directly towards player, max velocity
