@@ -1,15 +1,12 @@
 #include <raylib.h>
 #include <raymath.h>
+#include <iostream>
 #include <vector>
 
 #include "constants.h"
 #include "classes.h"
 #include "game.h"
 
-Texture2D TEX_base_full;
-Texture2D TEX_base_dmg;
-Texture2D TEX_base_crit;
-Texture2D TEX_stars_bg;
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bird's Eye");
@@ -250,6 +247,10 @@ Sound AUDIO_damage;
 
 Texture2D TEX_ship;
 Texture2D TEX_bullet;
+Texture2D TEX_base_full;
+Texture2D TEX_base_dmg;
+Texture2D TEX_base_crit;
+Texture2D TEX_stars_bg;
 
 Vector2 RENDER_ship_origin;
 Vector2 RENDER_bullet_origin;
