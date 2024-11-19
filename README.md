@@ -1,2 +1,2 @@
 run game.exe after extracting latest release.
-windows defender probably will try to "protect" you, ignore that.
+windows defender will probably try to "protect" you, ignore that.
